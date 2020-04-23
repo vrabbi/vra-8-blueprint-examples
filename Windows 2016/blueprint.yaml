@@ -1,0 +1,41 @@
+name: Windows 2016
+formatVersion: 1
+inputs:
+  flavor:
+    type: string
+    title: VM Size
+    oneOf:
+      - title: Dev VM
+        const: small
+      - title: Staging VM
+        const: medium
+      - title: Prod VM
+        const: large
+    default: small
+resources:
+  Cloud_vSphere_Machine_1:
+    type: Cloud.vSphere.Machine
+    metadata:
+      layoutPosition:
+        - 0
+        - 0
+    properties:
+      image: windows2016
+      flavor: '${input.flavor}'
+      customizationSpec: windows-custom-spec
+      snapshotLimit: 1
+      storage:
+        maxDiskCapacityInGB: 100
+      networks:
+        - assignment: static
+          network: '${resource.Cloud_NSX_Network_1.id}'
+  Cloud_NSX_Network_1:
+    type: Cloud.NSX.Network
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'networktype:public'

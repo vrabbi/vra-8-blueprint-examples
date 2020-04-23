@@ -1,0 +1,27 @@
+name: K8s Namespace
+formatVersion: 1
+inputs:
+  nsName:
+    type: string
+    title: Namespace Name
+    pattern: '[a-z0-9A-Z]+'
+  site:
+    type: string
+    title: site
+    default: 'dev'
+    enum:
+      - 'dev'
+      - 'prod'
+      - 'qa'
+      - 'pre-prod'
+resources:
+  Cloud_K8S_Namespace_1:
+    type: Cloud.K8S.Namespace
+    metadata:
+      layoutPosition:
+        - 0
+        - 0
+    properties:
+      name: '${input.nsName}'
+      constraints:
+        - tag: '${"site:" + input.site}'

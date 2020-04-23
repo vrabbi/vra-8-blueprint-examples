@@ -1,0 +1,71 @@
+name: IIS Server via Ansible
+formatVersion: 1
+inputs:
+  flavor:
+    type: string
+    title: VM Size
+    oneOf:
+      - title: Dev VM
+        const: small
+      - title: Staging VM
+        const: medium
+      - title: Prod VM
+        const: large
+    default: small
+  guestAdminUsername:
+    type: string
+    title: Guest OS Admin Username
+    default: 'Administrator'
+  guestAdminPassword:
+    type: string
+    encrypted: true
+    title: Guest OS Pre Configured Username
+  ansibleIntegration:
+    type: string
+    title: VRA Ansible Integration Account Name
+resources:
+  Cloud_Ansible_1:
+    type: Cloud.Ansible
+    metadata:
+      layoutPosition:
+        - 0
+        - 0
+    properties:
+      host: '${resource.Cloud_vSphere_Machine_1.*}'
+      osType: windows
+      account: '${input.ansibleIntegration}'
+      username: '${input.guestAdminUsername}'
+      password: '${input.guestAdminPassword}'
+      inventoryFile: /etc/ansible/hosts
+      maxConnectionRetries: 10
+      groups:
+        - iis
+      playbooks:
+        provision:
+          - /home/ansible/playbooks/iis/install.yaml
+  Cloud_vSphere_Machine_1:
+    type: Cloud.vSphere.Machine
+    metadata:
+      layoutPosition:
+        - 0
+        - 1
+    properties:
+      image: windows2016
+      flavor: '${input.flavor}'
+      customizationSpec: windows-custom-spec
+      snapshotLimit: 1
+      storage:
+        maxDiskCapacityInGB: 100
+      networks:
+        - assignment: static
+          network: '${resource.Cloud_NSX_Network_1.id}'
+  Cloud_NSX_Network_1:
+    type: Cloud.NSX.Network
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'networktype:public'

@@ -1,0 +1,78 @@
+name: Ubuntu VM
+formatVersion: 1
+inputs:
+  username:
+    type: string
+    default: admin
+    maxLength: 10
+    minLength: 2
+    title: new user
+  count:
+    type: number
+    minimum: 1
+    maximum: 4
+    default: 2
+  sshKey:
+    type: string
+    title: new Users SSH public Key
+  flavor:
+    type: string
+    title: VM Size
+    enum:
+      - small
+      - medium
+      - large
+    default: small
+  environment:
+    type: string
+    enum:
+      - AWS
+      - VC
+      - GCP
+      - Azure
+    default: AWS
+    title: Select Environment for Deployment
+    description: Target Environment
+resources:
+  Cloud_Machine_1:
+    type: Cloud.Machine
+    metadata:
+      layoutPosition:
+        - 0
+        - 1
+    properties:
+      image: ubuntu
+      count: '${input.count}'
+      flavor: '${input.flavor}'
+      folderName: '${input.environment == "VC" ? env.projectName : ""}'
+      cloudConfig: |
+        #cloud-config
+          users:
+            - name: ${input.username}
+              groups: sudo
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              shell: /bin/bash
+              ssh_authorized_keys:
+                - ${input.sshKey}
+          packages:
+            - apache2
+          runcmd:
+            - service apache2 start
+            - USER = ${input.username}
+            - cp /home/$USER/.ssh/authorized_keys\ .ssh/authorized_keys2 /home/$USER/.ssh/authorized_keys
+            - chown $USER:$USER /home/$USER/.ssh/authorized_keys
+      networks:
+        - network: '${resource.Cloud_Network_1.id}'
+          assignment: static
+      constraints:
+        - tag: '${"env:" + to_lower(input.environment)}'
+  Cloud_Network_1:
+    type: Cloud.Network
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: '${"env:" + to_lower(input.environment)}'
